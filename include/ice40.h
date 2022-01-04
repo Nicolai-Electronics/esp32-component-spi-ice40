@@ -29,8 +29,9 @@ typedef struct ICE40 {
 } ICE40;
 
 // Raw SPI transfer functions
-esp_err_t ice40_send(ICE40* device, const uint8_t* data, int length);
-esp_err_t ice40_receive(ICE40* device, uint8_t* data, int length);
+esp_err_t ice40_send(ICE40* device, const uint8_t* data, uint32_t length);
+esp_err_t ice40_receive(ICE40* device, uint8_t* data, uint32_t length);
+esp_err_t ice40_transaction(ICE40* device, uint8_t* data_out, uint32_t out_length, uint8_t* data_in, uint32_t in_length);
 
 // Devic state management
 esp_err_t ice40_enable(ICE40* device);

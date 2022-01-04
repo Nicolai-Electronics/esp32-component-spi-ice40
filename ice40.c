@@ -20,7 +20,7 @@
 
 #include "include/ice40.h"
 
-static const char *TAG = "hardware";
+static const char *TAG = "ice40";
 
 // SPI communication
 
@@ -38,28 +38,39 @@ static void IRAM_ATTR ice40_post_transaction_cb(spi_transaction_t* transaction) 
     }
 }
 
-esp_err_t ice40_send(ICE40* device, const uint8_t* data, int length) {
-    if (length == 0) return ESP_OK;
+esp_err_t ice40_send(ICE40* device, const uint8_t* data, uint32_t length) {
     if (device->spi_device == NULL) return ESP_FAIL;
-    spi_transaction_t t = {
+    spi_transaction_t transaction = {
         .user = (void*) device,
         .length = length * 8,
         .tx_buffer = data,
         .rx_buffer = NULL
     };
-    return spi_device_transmit(device->spi_device, &t);
+    return spi_device_transmit(device->spi_device, &transaction);
 }
 
-esp_err_t ice40_receive(ICE40* device, uint8_t* data, int length) {
-    if (length == 0) return ESP_OK;
+esp_err_t ice40_receive(ICE40* device, uint8_t* data, uint32_t length) {
     if (device->spi_device == NULL) return ESP_FAIL;
-    spi_transaction_t t = {
+    spi_transaction_t transaction = {
         .user = (void*) device,
-        .length = length * 8,
+        .length = 0,
+        .rxlength = length * 8,
         .tx_buffer = NULL,
         .rx_buffer = data
     };
-    return spi_device_transmit(device->spi_device, &t);
+    return spi_device_transmit(device->spi_device, &transaction);
+}
+
+esp_err_t ice40_transaction(ICE40* device, uint8_t* data_out, uint32_t out_length, uint8_t* data_in, uint32_t in_length) {
+    if (device->spi_device == NULL) return ESP_FAIL;
+    spi_transaction_t transaction = {
+        .user = (void*) device,
+        .length = out_length * 8,
+        .rxlength = in_length * 8,
+        .tx_buffer = data_out,
+        .rx_buffer = data_in
+    };
+    return spi_device_transmit(device->spi_device, &transaction);
 }
 
 // Device state management
@@ -170,7 +181,7 @@ esp_err_t ice40_init(ICE40* device) {
         .mode           = 0,
         .spics_io_num   = -1,
         .queue_size     = 1,
-        .flags          = (SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_3WIRE),
+        .flags          = 0,
         .pre_cb         = ice40_pre_transaction_cb,
         .post_cb        = ice40_post_transaction_cb,
         .command_bits   = 0,
