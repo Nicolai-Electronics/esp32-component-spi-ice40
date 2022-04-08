@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <esp_system.h>
+
 #include <soc/gpio_reg.h>
 #include <soc/gpio_sig_map.h>
 #include <soc/gpio_struct.h>
