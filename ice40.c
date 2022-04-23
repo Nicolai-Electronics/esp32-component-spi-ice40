@@ -131,7 +131,11 @@ esp_err_t ice40_load_bitstream(ICE40* device, const uint8_t* bitstream, uint32_t
     if (res != ESP_OK) return res;
     res = ice40_get_done(device, &done);
     if (res != ESP_OK) return res;
-    if (done) return ESP_FAIL; // Device shouldn't be signalling done after reset, if this happens hardware is broken
+    //if (done) return ESP_FAIL; // Device shouldn't be signalling done after reset, if this happens hardware is broken
+    if (done) {
+        ESP_LOGE(TAG, "FPGA SIGNALS DONE AFTER RESET, HARDWARE ERROR");
+        return ESP_FAIL;
+    }
     uint32_t position = 0;
     while (position < length) {
         uint32_t remaining = length - position;
