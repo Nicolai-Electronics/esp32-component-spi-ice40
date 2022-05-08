@@ -41,18 +41,18 @@ static void IRAM_ATTR ice40_post_transaction_cb(spi_transaction_t* transaction) 
 }
 
 esp_err_t ice40_send(ICE40* device, const uint8_t* data, uint32_t length) {
-    if (device->spi_device == NULL) return ESP_FAIL;
+    if (device->_spi_device_hd == NULL) return ESP_FAIL;
     spi_transaction_t transaction = {
         .user = (void*) device,
         .length = length * 8,
         .tx_buffer = data,
         .rx_buffer = NULL
     };
-    return spi_device_transmit(device->spi_device, &transaction);
+    return spi_device_transmit(device->_spi_device_hd, &transaction);
 }
 
 esp_err_t ice40_receive(ICE40* device, uint8_t* data, uint32_t length) {
-    if (device->spi_device == NULL) return ESP_FAIL;
+    if (device->_spi_device_hd == NULL) return ESP_FAIL;
     spi_transaction_t transaction = {
         .user = (void*) device,
         .length = 0,
@@ -60,11 +60,11 @@ esp_err_t ice40_receive(ICE40* device, uint8_t* data, uint32_t length) {
         .tx_buffer = NULL,
         .rx_buffer = data
     };
-    return spi_device_transmit(device->spi_device, &transaction);
+    return spi_device_transmit(device->_spi_device_hd, &transaction);
 }
 
 esp_err_t ice40_transaction(ICE40* device, uint8_t* data_out, uint32_t out_length, uint8_t* data_in, uint32_t in_length) {
-    if (device->spi_device == NULL) return ESP_FAIL;
+    if (device->_spi_device_fd == NULL) return ESP_FAIL;
     spi_transaction_t transaction = {
         .user = (void*) device,
         .length = out_length * 8,
@@ -72,7 +72,7 @@ esp_err_t ice40_transaction(ICE40* device, uint8_t* data_out, uint32_t out_lengt
         .tx_buffer = data_out,
         .rx_buffer = data_in
     };
-    return spi_device_transmit(device->spi_device, &transaction);
+    return spi_device_transmit(device->_spi_device_fd, &transaction);
 }
 
 // Device state management
@@ -182,8 +182,8 @@ esp_err_t ice40_init(ICE40* device) {
     
     device->cs_enabled = false;
         
-    spi_device_interface_config_t device_config = {
-        .clock_speed_hz = device->spi_speed,
+    spi_device_interface_config_t device_config_fd = {
+        .clock_speed_hz = device->spi_speed_full_duplex,
         .mode           = 0,
         .spics_io_num   = -1,
         .queue_size     = 1,
@@ -195,7 +195,23 @@ esp_err_t ice40_init(ICE40* device) {
         .dummy_bits     = 0
     };
 
-    res = spi_bus_add_device(device->spi_bus, &device_config, &device->spi_device);
+    res = spi_bus_add_device(device->spi_bus, &device_config_fd, &device->_spi_device_fd);
+    if (res != ESP_OK) return res;
+
+    spi_device_interface_config_t device_config_hd = {
+        .clock_speed_hz = device->spi_speed_half_duplex,
+        .mode           = 0,
+        .spics_io_num   = -1,
+        .queue_size     = 1,
+        .flags          = SPI_DEVICE_HALFDUPLEX,
+        .pre_cb         = ice40_pre_transaction_cb,
+        .post_cb        = ice40_post_transaction_cb,
+        .command_bits   = 0,
+        .address_bits   = 0,
+        .dummy_bits     = 0
+    };
+
+    res = spi_bus_add_device(device->spi_bus, &device_config_hd, &device->_spi_device_hd);
     if (res != ESP_OK) return res;
 
     return ice40_disable(device);

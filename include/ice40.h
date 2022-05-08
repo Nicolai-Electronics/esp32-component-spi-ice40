@@ -16,7 +16,8 @@ typedef struct ICE40 {
     int pin_int;
     
     // Configuration
-    uint32_t spi_speed;
+    uint32_t spi_speed_full_duplex;
+    uint32_t spi_speed_half_duplex;
     uint32_t spi_max_transfer_size;
     
     // External pin handlers
@@ -24,7 +25,8 @@ typedef struct ICE40 {
     ice40_set_reset_t set_reset;
     
     // Internal state
-    spi_device_handle_t spi_device;
+    spi_device_handle_t _spi_device_fd;
+    spi_device_handle_t _spi_device_hd;
     bool cs_enabled;
 } ICE40;
 
