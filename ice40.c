@@ -155,7 +155,7 @@ esp_err_t ice40_load_bitstream(ICE40* device, const uint8_t* bitstream, uint32_t
     return done ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t ice40_init(ICE40* device) {	
+esp_err_t ice40_init(ICE40* device) {
     esp_err_t res;
 
     if (device->pin_reset >= 0) {
