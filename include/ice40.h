@@ -18,6 +18,7 @@ typedef struct ICE40 {
     // Configuration
     uint32_t spi_speed_full_duplex;
     uint32_t spi_speed_half_duplex;
+    uint32_t spi_input_delay_ns;
     uint32_t spi_max_transfer_size;
     
     // External pin handlers
