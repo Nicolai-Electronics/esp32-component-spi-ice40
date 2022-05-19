@@ -226,7 +226,7 @@ esp_err_t ice40_init(ICE40* device) {
         
     spi_device_interface_config_t device_config_fd = {
         .clock_speed_hz = device->spi_speed_full_duplex,
-        .input_delay_ns = 0,
+        .input_delay_ns = device->spi_input_delay_ns,
         .mode           = 0,
         .spics_io_num   = -1,
         .queue_size     = 1,
