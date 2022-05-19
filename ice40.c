@@ -133,20 +133,44 @@ esp_err_t ice40_get_done(ICE40* device, bool* done) {
 }
 
 esp_err_t ice40_load_bitstream(ICE40* device, const uint8_t* bitstream, uint32_t length) {
+    const uint8_t dummy[20] = {0};
     bool done;
-    esp_err_t res = ice40_disable(device); // Put ICE40 in reset state
+
+    // Put ICE40 in reset state
+    esp_err_t res = ice40_disable(device);
     if (res != ESP_OK) return res;
-    res = gpio_set_level(device->pin_cs, false); // Set CS pin low
+
+    // Set CS pin low
+    res = gpio_set_level(device->pin_cs, false);
     if (res != ESP_OK) return res;
-    res = ice40_enable(device); // Put ICE40 in SPI slave download state
+
+    // Put ICE40 in SPI slave download state
+    res = ice40_enable(device);
     if (res != ESP_OK) return res;
+
+    // Wait 2 ms
+    vTaskDelay(2 / portTICK_PERIOD_MS);
+
+    // Check iCE40 is reset
     res = ice40_get_done(device, &done);
     if (res != ESP_OK) return res;
-    //if (done) return ESP_FAIL; // Device shouldn't be signalling done after reset, if this happens hardware is broken
     if (done) {
         ESP_LOGE(TAG, "FPGA SIGNALS DONE AFTER RESET, HARDWARE ERROR");
         return ESP_FAIL;
     }
+
+    // Set CS pin high
+    res = gpio_set_level(device->pin_cs, true);
+    if (res != ESP_OK) return res;
+
+    // Send 8 dummy clocks
+    ice40_send(device, dummy, 1);
+
+    // Set CS pin low
+    res = gpio_set_level(device->pin_cs, false);
+    if (res != ESP_OK) return res;
+
+    // Send the whole bitstream
     uint32_t position = 0;
     while (position < length) {
         uint32_t remaining = length - position;
@@ -154,15 +178,22 @@ esp_err_t ice40_load_bitstream(ICE40* device, const uint8_t* bitstream, uint32_t
         ice40_send(device, bitstream + position, transferSize);
         position += transferSize;
     }
-    for (uint8_t i = 0; i < 10; i++) {
-        const uint8_t dummy[10] = {0};
-        ice40_send(device, dummy, sizeof(dummy));
-    }
-    res = gpio_set_level(device->pin_cs, true); // Set CS pin high
+
+    // Set CS pin high
+    res = gpio_set_level(device->pin_cs, true);
     if (res != ESP_OK) return res;
+
+    // Send > 149 dummy cycles
+    ice40_send(device, dummy, sizeof(dummy));
+
+    // Check configuration worked
     res = ice40_get_done(device, &done);
     if (res != ESP_OK) return res;
-    device->cs_enabled = true; // Enable the CS pin (to allow normal SPI transfers)
+
+    // Enable the CS pin (to allow normal SPI transfers)
+    device->cs_enabled = true;
+
+    // Done !
     return done ? ESP_OK : ESP_FAIL;
 }
 
@@ -195,7 +226,7 @@ esp_err_t ice40_init(ICE40* device) {
         
     spi_device_interface_config_t device_config_fd = {
         .clock_speed_hz = device->spi_speed_full_duplex,
-        .input_delay_ns = 0,
+        .input_delay_ns = device->spi_input_delay_ns,
         .mode           = 0,
         .spics_io_num   = -1,
         .queue_size     = 1,
