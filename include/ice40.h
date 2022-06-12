@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <esp_err.h>
+#include <driver/spi_master.h>
 
 typedef esp_err_t (*ice40_get_done_t)(bool*);
 typedef esp_err_t (*ice40_set_reset_t)(bool);
