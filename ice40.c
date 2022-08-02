@@ -36,7 +36,7 @@ static void IRAM_ATTR ice40_pre_transaction_cb(spi_transaction_t* transaction) {
 static void IRAM_ATTR ice40_post_transaction_cb(spi_transaction_t* transaction) {
     ICE40* device = (ICE40*) transaction->user;
     if (device->cs_enabled) {
-        gpio_set_level(device->pin_cs, true);
+        gpio_set_level(device->pin_cs, (transaction->flags & SPI_TRANS_CS_KEEP_ACTIVE) ? false : true);
     }
 }
 
