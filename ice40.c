@@ -36,7 +36,7 @@ static void IRAM_ATTR ice40_pre_transaction_cb(spi_transaction_t* transaction) {
 static void IRAM_ATTR ice40_post_transaction_cb(spi_transaction_t* transaction) {
     ICE40* device = (ICE40*) transaction->user;
     if (device->cs_enabled) {
-        gpio_set_level(device->pin_cs, true);
+        gpio_set_level(device->pin_cs, (transaction->flags & SPI_TRANS_CS_KEEP_ACTIVE) ? false : true);
     }
 }
 
@@ -229,7 +229,7 @@ esp_err_t ice40_init(ICE40* device) {
         .input_delay_ns = device->spi_input_delay_ns,
         .mode           = 0,
         .spics_io_num   = -1,
-        .queue_size     = 1,
+        .queue_size     = 2,
         .flags          = 0,
         .pre_cb         = ice40_pre_transaction_cb,
         .post_cb        = ice40_post_transaction_cb,
@@ -246,7 +246,7 @@ esp_err_t ice40_init(ICE40* device) {
         .input_delay_ns = device->spi_input_delay_ns,
         .mode           = 0,
         .spics_io_num   = -1,
-        .queue_size     = 1,
+        .queue_size     = 2,
         .flags          = SPI_DEVICE_HALFDUPLEX,
         .pre_cb         = ice40_pre_transaction_cb,
         .post_cb        = ice40_post_transaction_cb,
@@ -263,7 +263,7 @@ esp_err_t ice40_init(ICE40* device) {
         .input_delay_ns = device->spi_input_delay_ns,
         .mode           = 0,
         .spics_io_num   = -1,
-        .queue_size     = 1,
+        .queue_size     = 2,
         .flags          = SPI_DEVICE_HALFDUPLEX,
         .pre_cb         = ice40_pre_transaction_cb,
         .post_cb        = ice40_post_transaction_cb,
